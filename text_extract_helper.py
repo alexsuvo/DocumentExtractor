@@ -1,7 +1,6 @@
 import io
 from datetime import datetime
 
-import cv2
 import cx_Oracle
 import psycopg2
 import requests
@@ -12,7 +11,8 @@ PGA_CS = 'postgresql://dafm:dafm123~@localhost:5432/dafm_topic_modeling'
 PGA_SQL = 'INSERT INTO topic_modeler_dataraw(text, created_date) VALUES(%s, %s);'
 
 ORCL_CS = 'scott/tiger@host:1521/orcl'
-ORCL_SQL = 'select id, blob from'
+ORCL_SQL_SELECT = 'select id, blob from'
+ORCL_SQL_INSERT = 'INSERT INTO topic_modeler_dataraw(text) VALUES(%s);'
 
 DUMP_URL = 'http://localhost:8000/rest_api/data_raw/'
 
@@ -20,7 +20,7 @@ DUMP_URL = 'http://localhost:8000/rest_api/data_raw/'
 def get_data(queue):
     oracle_connection = cx_Oracle.connect(ORCL_CS)
     oracle_cursor = oracle_connection.cursor()
-    oracle_cursor.execute(ORCL_SQL)
+    oracle_cursor.execute(ORCL_SQL_SELECT)
     try:
         # iterate over cursor result
         for result in oracle_cursor:
@@ -53,7 +53,7 @@ def extract_data(data):
     return text, pdf
 
 
-def dump_data(db, text):
+def dump_text(db, text):
     postgres_connection = psycopg2.connect(PGA_CS)
     postgres_cursor = postgres_connection.cursor()
     try:
@@ -69,3 +69,17 @@ def dump_data(db, text):
     finally:
         postgres_cursor.close()
         postgres_connection.close()
+
+
+def dump_pdf(pdf):
+    oracle_connection = cx_Oracle.connect(ORCL_CS)
+    oracle_cursor = oracle_connection.cursor()
+    oracle_cursor.execute(ORCL_SQL_INSERT)
+    try:
+        # iterate over cursor result
+        if pdf:
+            pass
+    finally:
+        # close cursor and connection
+        oracle_cursor.close()
+        oracle_connection.close()
