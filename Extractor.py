@@ -17,7 +17,7 @@ ORCL_SQL = 'select id, blob from'
 PGA_CS = 'postgresql://dafm:dafm123~@localhost:5432/dafm_topic_modeling'
 PGA_SQL = 'INSERT INTO topic_modeler_dataraw(text, created_date) VALUES(%s, %s);'
 
-DB_DUMP = True
+DB_DUMP = False
 DUMP_URL = 'http://localhost:8000/rest_api/data_raw/'
 
 logging.basicConfig(level=logging.DEBUG)
@@ -65,6 +65,8 @@ class DocumentWorker(Process):
                         image - cv2.medianBlur(image, 5)
                         # extract text
                         text = pytesseract.image_to_string(image)
+                        # convert to PDF
+                        pdf = pytesseract.image_to_pdf_or_hocr(image)
                         # where to go
                         if DB_DUMP:
                             # store in postgres

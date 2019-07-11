@@ -1,0 +1,71 @@
+import io
+from datetime import datetime
+
+import cv2
+import cx_Oracle
+import psycopg2
+import requests
+from PIL import Image
+from pytesseract import pytesseract
+
+PGA_CS = 'postgresql://dafm:dafm123~@localhost:5432/dafm_topic_modeling'
+PGA_SQL = 'INSERT INTO topic_modeler_dataraw(text, created_date) VALUES(%s, %s);'
+
+ORCL_CS = 'scott/tiger@host:1521/orcl'
+ORCL_SQL = 'select id, blob from'
+
+DUMP_URL = 'http://localhost:8000/rest_api/data_raw/'
+
+
+def get_data(queue):
+    oracle_connection = cx_Oracle.connect(ORCL_CS)
+    oracle_cursor = oracle_connection.cursor()
+    oracle_cursor.execute(ORCL_SQL)
+    try:
+        # iterate over cursor result
+        for result in oracle_cursor:
+            # id of the file
+            file_id = result[0]
+            # processed or about to be
+            if file_id not in queue:
+                # mark as such
+                queue.put(file_id)
+                # content of the file
+                file_blob = result[1]
+                # make image from bytes
+                yield file_blob.read()
+    finally:
+        # close cursor and connection
+        oracle_cursor.close()
+        oracle_connection.close()
+
+
+def extract_data(data):
+    # make image from bytes
+    image = Image.open(io.BytesIO(data))
+    # greyscale
+    image = image.convert('LA')
+    # extract text
+    text = pytesseract.image_to_string(image)
+    # convert to PDF
+    pdf = pytesseract.image_to_pdf_or_hocr(image)
+    # done
+    return text, pdf
+
+
+def dump_data(db, text):
+    postgres_connection = psycopg2.connect(PGA_CS)
+    postgres_cursor = postgres_connection.cursor()
+    try:
+        # where to go
+        if db:
+            # store in postgres
+            postgres_cursor.execute(PGA_SQL, (text, datetime.now()))
+            postgres_connection.commit()
+        else:
+            # rest call
+            tmp = {'text': text}
+            requests.post(DUMP_URL, data=tmp)
+    finally:
+        postgres_cursor.close()
+        postgres_connection.close()
