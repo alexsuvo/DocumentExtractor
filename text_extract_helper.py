@@ -1,10 +1,14 @@
 import io
+import os
+import shutil
 from datetime import datetime
 
 import cx_Oracle
+import numpy as np
 import psycopg2
 import requests
 from PIL import Image
+from pdf2jpg import pdf2jpg
 from pytesseract import pytesseract
 
 PGA_CS = 'postgresql://dafm:dafm123~@localhost:5432/dafm_topic_modeling'
@@ -33,16 +37,14 @@ def get_data(queue):
                 # content of the file
                 file_blob = result[1]
                 # make image from bytes
-                yield file_blob.read()
+                yield file_id, file_blob.read()
     finally:
         # close cursor and connection
         oracle_cursor.close()
         oracle_connection.close()
 
 
-def extract_data(data):
-    # make image from bytes
-    image = Image.open(io.BytesIO(data))
+def extract_data(image):
     # greyscale
     image = image.convert('LA')
     # extract text
@@ -51,6 +53,34 @@ def extract_data(data):
     pdf = pytesseract.image_to_pdf_or_hocr(image)
     # done
     return text, pdf
+
+
+def extract_multipage_data(key, image):
+    # file path
+    inut_file_path = os.path.join(os.getcwd(), 'Input', key)
+    # path for output
+    output_file_path = os.path.join(os.getcwd(), 'Output', key)
+    try:
+        # dump file
+        with open(inut_file_path, 'wb') as file:
+            file.write(image)
+        # create output directory
+        os.mkdir(output_file_path)
+        # to convert all pages
+        result = pdf2jpg.convert_pdf2jpg(inut_file_path, output_file_path, dpi=300, pages="ALL")
+        # combine all images into one
+        imgs = [Image.open(i) for i in result[0]['output_jpgfiles']]
+        min_shape = sorted([(np.sum(i.size), i.size) for i in imgs])[0][1]
+        imgs_comb = np.vstack((np.asarray(i.resize(min_shape)) for i in imgs))
+        # done
+        return extract_data(Image.fromarray(imgs_comb))
+    finally:
+        # delete file
+        if os.path.exists(inut_file_path):
+            os.remove(inut_file_path)
+        # delete images
+        if os.path.exists(output_file_path):
+            shutil.rmtree(output_file_path)
 
 
 def dump_text(db, text):

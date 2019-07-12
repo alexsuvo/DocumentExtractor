@@ -1,0 +1,1 @@
+for every file directory created and filled with images of pages

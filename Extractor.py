@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from multiprocessing import Queue, Process
 
-from text_extract_helper import get_data, extract_data, dump_text, dump_pdf
+from text_extract_helper import get_data, extract_data, dump_text, dump_pdf, extract_multipage_data
 
 WORKERS_NUM = 8
 
@@ -19,9 +19,9 @@ class DocumentWorker(Process):
     def run(self):
         logger.debug(f'Start worker:{self.number} on:{datetime.now()}')
         try:
-            for image in get_data(self.queue):
+            for key, image in get_data(self.queue):
                 # extract
-                text, pdf = extract_data(image)
+                text, pdf = extract_multipage_data(key, image)
                 # dump text
                 dump_text(False, text)
                 # dump pdf
