@@ -12,11 +12,11 @@ from pdf2jpg import pdf2jpg
 from pytesseract import pytesseract
 
 PGA_CS = 'postgresql://dafm:dafm123~@localhost:5432/dafm_topic_modeling'
-PGA_SQL = 'INSERT INTO topic_modeler_dataraw(text, created_date) VALUES(%s, %s);'
+PGA_SQL = 'INSERT INTO topic_modeler_dataraw(text, created_date) VALUES(:t, :c);'
 
 ORCL_CS = 'scott/tiger@host:1521/orcl'
 ORCL_SQL_SELECT = 'select id, blob from'
-ORCL_SQL_INSERT = 'INSERT INTO topic_modeler_dataraw(text) VALUES(%s);'
+ORCL_SQL_INSERT = 'INSERT INTO topic_modeler_dataraw(pdf) VALUES(:val);'
 
 DUMP_URL = 'http://localhost:8000/rest_api/data_raw/'
 
@@ -104,11 +104,11 @@ def dump_text(db, text):
 def dump_pdf(pdf):
     oracle_connection = cx_Oracle.connect(ORCL_CS)
     oracle_cursor = oracle_connection.cursor()
-    oracle_cursor.execute(ORCL_SQL_INSERT)
     try:
-        # iterate over cursor result
         if pdf:
-            pass
+            mem_file = io.BytesIO(pdf)
+            oracle_cursor.execute(ORCL_SQL_INSERT, mem_file.getvalue())
+            oracle_connection.commit()
     finally:
         # close cursor and connection
         oracle_cursor.close()
