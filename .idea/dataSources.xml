@@ -7,5 +7,15 @@
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
       <jdbc-url>jdbc:postgresql://localhost:5432/dafm_topic_modeling</jdbc-url>
     </data-source>
+    <data-source source="LOCAL" name="@sdbahpocm01-db.agriculture.gov.ie" uuid="e319a04d-fc4c-4f14-81c9-6c50ce09db43">
+      <driver-ref>oracle</driver-ref>
+      <synchronize>true</synchronize>
+      <auto-commit>false</auto-commit>
+      <jdbc-driver>oracle.jdbc.OracleDriver</jdbc-driver>
+      <jdbc-url>jdbc:oracle:thin:@sdbahpocm01-db.agriculture.gov.ie:1523:NPSS..agriculture.gov.ie</jdbc-url>
+      <driver-properties>
+        <property name="v$session.program" value="DataGrip" />
+      </driver-properties>
+    </data-source>
   </component>
 </project>

@@ -14,8 +14,8 @@ from pytesseract import pytesseract
 PGA_CS = 'postgresql://dafm:dafm123~@localhost:5432/dafm_topic_modeling'
 PGA_SQL = 'INSERT INTO topic_modeler_dataraw(text, created_date) VALUES(:t, :c);'
 
-ORCL_CS = 'scott/tiger@host:1521/orcl'
-ORCL_SQL_SELECT = 'select id, blob from'
+ORCL_CS = 'bps_scan_doc/anit1234@//sdbahpocm01-db.agriculture.gov.ie:1532/NPSS.agriculture.gov.ie'
+ORCL_SQL_SELECT = 'select SDS_SCANNED_DOCUMENT_ID, SDI_IMAGE from BPS_SCAN_DOC.TDCR_SCANNED_DOCUMENT_IMAGES'
 ORCL_SQL_INSERT = 'INSERT INTO topic_modeler_dataraw(pdf) VALUES(:val);'
 
 DUMP_URL = 'http://localhost:8000/rest_api/data_raw/'
