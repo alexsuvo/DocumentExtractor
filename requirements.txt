@@ -4,4 +4,6 @@ Pillow==6.0.0
 opencv-python==4.1.0.25
 pytesseract==0.2.7
 pdf2jpg==0.0.9
+PyPDF2==1.26.0
+
 
