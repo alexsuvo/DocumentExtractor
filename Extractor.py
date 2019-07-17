@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from multiprocessing import Queue, Process
+from multiprocessing import Queue, Process, Lock
 
 from text_extract_helper import get_data, extract_data, dump_text, dump_pdf, extract_multipage_data
 
@@ -11,15 +11,16 @@ logger = logging.getLogger(__name__)
 
 
 class DocumentWorker(Process):
-    def __init__(self, number, queue):
+    def __init__(self, number, lock, list_id):
         super().__init__()
         self.number = number
-        self.queue = queue
+        self.lock = lock
+        self.list_id = list_id
 
     def run(self):
         logger.debug(f'Start worker:{self.number} on:{datetime.now()}')
         try:
-            for key, image in get_data(self.queue):
+            for key, image in get_data(self.lock, self.list_id):
                 # extract
                 text, pdf = extract_multipage_data(key, image)
                 # dump text
@@ -35,11 +36,12 @@ if __name__ == '__main__':
     # start
     logger.debug(f'Start:{datetime.now()}')
     # thread safe queue to hold files processed
-    files_inuse = Queue()
+    list_id = []
+    lock = Lock()
     # create workers
     workers = []
     for i in range(1, WORKERS_NUM + 1):
-        workers.append(DocumentWorker(i, files_inuse))
+        workers.append(DocumentWorker(i, lock, list_id))
     # start workers
     for w in workers:
         w.start()
